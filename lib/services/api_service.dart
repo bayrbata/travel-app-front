@@ -5,8 +5,8 @@ import 'package:travelapp/models/travel_model.dart';
 class ApiService {
   // Android эмулятор дээр: 10.0.2.2 ашиглана
   // iOS эмулятор эсвэл physical device дээр: localhost эсвэл IP хаяг ашиглана
-  static const String baseUrl = "http://10.0.2.2:2000"; // Android эмулятор
-  // static const String baseUrl = "http://localhost:2000"; // iOS эсвэл physical device
+  // static const String baseUrl = "http://10.0.2.2:2000"; // Android эмулятор
+  static const String baseUrl = "http://localhost:2000"; // iOS эсвэл physical device
 
   // --- GET: Бүх аяллын зургуудыг авах (эрэмбэлэх, хайлттай) ---
   Future<List<Travel>> fetchTravels({
