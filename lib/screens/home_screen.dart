@@ -311,7 +311,7 @@ class HomeScreenState extends State<HomeScreen> {
                       crossAxisCount: 2,
                       crossAxisSpacing: 8,
                       mainAxisSpacing: 8,
-                      childAspectRatio: 0.75,
+                      childAspectRatio: 0.88,
                     ),
                     itemCount: travels.length,
                     itemBuilder: (context, index) {
@@ -476,30 +476,34 @@ class _AnimatedTravelCardState extends State<_AnimatedTravelCard>
                       ),
                       // Title and location
                       Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6.0,
+                          vertical: 4.0,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               widget.travel.title,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                                fontSize: 12,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 2),
                             Row(
                               children: [
                                 const Icon(Icons.location_on,
-                                    size: 14, color: Colors.grey),
-                                const SizedBox(width: 4),
+                                    size: 11, color: Colors.grey),
+                                const SizedBox(width: 2),
                                 Expanded(
                                   child: Text(
                                     widget.travel.location,
                                     style: const TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 10,
                                       color: Colors.grey,
                                     ),
                                     maxLines: 1,
@@ -510,17 +514,18 @@ class _AnimatedTravelCardState extends State<_AnimatedTravelCard>
                             ),
                             if (widget.travel.country != null ||
                                 widget.travel.city != null) ...[
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 2),
                               Wrap(
-                                spacing: 4,
+                                spacing: 2,
+                                runSpacing: 1,
                                 children: [
                                   if (widget.travel.country != null)
                                     Chip(
                                       label: Text(
                                         widget.travel.country!,
-                                        style: const TextStyle(fontSize: 10),
+                                        style: const TextStyle(fontSize: 8),
                                       ),
-                                      padding: EdgeInsets.zero,
+                                      padding: const EdgeInsets.symmetric(horizontal: 3),
                                       materialTapTargetSize:
                                           MaterialTapTargetSize.shrinkWrap,
                                       visualDensity: VisualDensity.compact,
@@ -529,9 +534,9 @@ class _AnimatedTravelCardState extends State<_AnimatedTravelCard>
                                     Chip(
                                       label: Text(
                                         widget.travel.city!,
-                                        style: const TextStyle(fontSize: 10),
+                                        style: const TextStyle(fontSize: 8),
                                       ),
-                                      padding: EdgeInsets.zero,
+                                      padding: const EdgeInsets.symmetric(horizontal: 3),
                                       materialTapTargetSize:
                                           MaterialTapTargetSize.shrinkWrap,
                                       visualDensity: VisualDensity.compact,
