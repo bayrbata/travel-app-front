@@ -13,9 +13,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Travel Gallery',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 4,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
