@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:travelapp/models/travel_model.dart';
 import 'package:travelapp/services/api_service.dart';
@@ -153,7 +154,9 @@ class HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
+        children: [
+          Column(
         children: [
           // Search and Sort Bar
           Padding(
@@ -328,12 +331,156 @@ class HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
+          ),
+          // Snowflake Animation
+          const IgnorePointer(
+            child: _SnowflakeAnimation(),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToAdd,
         child: const Icon(Icons.add),
       ),
     );
+  }
+}
+
+// Snowflake Animation Widget
+class _SnowflakeAnimation extends StatefulWidget {
+  const _SnowflakeAnimation();
+
+  @override
+  State<_SnowflakeAnimation> createState() => _SnowflakeAnimationState();
+}
+
+class _SnowflakeAnimationState extends State<_SnowflakeAnimation>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  final List<Snowflake> _snowflakes = [];
+  final math.Random _random = math.Random();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    )..repeat();
+
+    // Create snowflakes
+    for (int i = 0; i < 50; i++) {
+      _snowflakes.add(Snowflake(_random));
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        // Update snowflake positions
+        final screenSize = MediaQuery.of(context).size;
+        for (var snowflake in _snowflakes) {
+          snowflake.update(screenSize.height);
+        }
+        
+        return CustomPaint(
+          painter: SnowflakePainter(snowflakes: _snowflakes),
+          size: Size.infinite,
+        );
+      },
+    );
+  }
+}
+
+class Snowflake {
+  double x;
+  double y;
+  double size;
+  double speed;
+  double opacity;
+  double drift;
+  final math.Random _random;
+
+  Snowflake(this._random) {
+    x = _random.nextDouble() * 100;
+    y = _random.nextDouble() * -100; // Start above screen
+    size = 4 + _random.nextDouble() * 6;
+    speed = 0.3 + _random.nextDouble() * 0.5;
+    opacity = 0.5 + _random.nextDouble() * 0.5;
+    drift = -0.5 + _random.nextDouble();
+  }
+
+  void update(double screenHeight) {
+    y += speed;
+    x += drift * 0.1; // Horizontal drift
+    
+    // Reset snowflake if it goes off screen
+    if (y > screenHeight + 20) {
+      y = -20;
+      x = _random.nextDouble() * 100;
+    }
+    
+    // Wrap around horizontally
+    if (x < -10) x = 110;
+    if (x > 110) x = -10;
+  }
+}
+
+class SnowflakePainter extends CustomPainter {
+  final List<Snowflake> snowflakes;
+
+  SnowflakePainter({required this.snowflakes});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.fill;
+
+    for (var snowflake in snowflakes) {
+      final x = (snowflake.x / 100) * size.width;
+      final y = snowflake.y;
+
+      paint.color = Colors.white.withOpacity(snowflake.opacity);
+      
+      // Draw snowflake (simple 6-pointed star)
+      _drawSnowflake(canvas, Offset(x, y), snowflake.size, paint);
+    }
+  }
+
+  void _drawSnowflake(Canvas canvas, Offset center, double size, Paint paint) {
+    final path = Path();
+    
+    // Draw 6-pointed snowflake
+    for (int i = 0; i < 6; i++) {
+      final angle = (i * 60) * math.pi / 180;
+      final x1 = center.dx + size * 0.5 * math.cos(angle);
+      final y1 = center.dy + size * 0.5 * math.sin(angle);
+      final x2 = center.dx + size * math.cos(angle);
+      final y2 = center.dy + size * math.sin(angle);
+      
+      path.moveTo(center.dx, center.dy);
+      path.lineTo(x1, y1);
+      path.moveTo(center.dx, center.dy);
+      path.lineTo(x2, y2);
+    }
+    
+    canvas.drawPath(path, paint);
+    
+    // Draw center circle
+    canvas.drawCircle(center, size * 0.3, paint);
+  }
+
+  @override
+  bool shouldRepaint(SnowflakePainter oldDelegate) {
+    return true;
   }
 }
 
