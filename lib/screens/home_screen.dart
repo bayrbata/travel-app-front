@@ -412,7 +412,7 @@ class Snowflake {
   Snowflake(this._random) {
     x = _random.nextDouble() * 100;
     y = _random.nextDouble() * -100; // Start above screen
-    size = 12 + _random.nextDouble() * 18; // Larger snowflakes (12-30)
+    size = 12 + _random.nextDouble() * 25; // Larger snowflakes (12-30)
     speed = 0.3 + _random.nextDouble() * 0.5;
     opacity = 0.6 + _random.nextDouble() * 0.4;
     drift = -0.5 + _random.nextDouble();
