@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:travelapp/services/auth_service.dart';
 import 'package:travelapp/screens/login_screen.dart';
@@ -13,11 +14,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _authService = AuthService();
   Map<String, String?> _userInfo = {};
   bool _isLoading = true;
+  int _snowflakesInCircle = 0;
+  final List<_SnowflakePosition> _snowflakes = [];
 
   @override
   void initState() {
     super.initState();
     _loadUserInfo();
+    // Initialize 5 draggable snowflakes
+    _initializeSnowflakes();
+  }
+
+  void _initializeSnowflakes() {
+    _snowflakes.clear();
+    for (int i = 0; i < 5; i++) {
+      _snowflakes.add(_SnowflakePosition(
+        id: i,
+        offset: Offset.zero,
+        isInCircle: false,
+      ));
+    }
+  }
+  
+  void _handleSnowflakeDropped(int snowflakeId) {
+    setState(() {
+      final snowflake = _snowflakes.firstWhere((s) => s.id == snowflakeId);
+      if (!snowflake.isInCircle) {
+        snowflake.isInCircle = true;
+        _snowflakesInCircle++;
+      }
+    });
   }
 
   Future<void> _loadUserInfo() async {
@@ -103,39 +129,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Профайлын зураг
+                  // Snowman Circle with Drop Zone
                   Center(
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [
-                            Theme.of(context).colorScheme.primary,
-                            Theme.of(context).colorScheme.primary.withOpacity(0.7),
-                          ],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                            blurRadius: 20,
-                            spreadRadius: 5,
-                          ),
-                        ],
-                      ),
-                      child: CircleAvatar(
-                        radius: 60,
-                        backgroundColor: Colors.white,
-                        child: Text(
-                          (_userInfo['username']?.substring(0, 1).toUpperCase() ?? 'U'),
-                          style: TextStyle(
-                            fontSize: 48,
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                    child: _SnowmanCircle(
+                      snowflakesInCircle: _snowflakesInCircle,
+                      onSnowflakeDropped: _handleSnowflakeDropped,
                     ),
+                  ),
+                  const SizedBox(height: 32),
+                  
+                  // Instruction text
+                  Text(
+                    '5 цасны хэлбэрийг дугуй руу чирж тавина уу',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Draggable Snowflakes
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    alignment: WrapAlignment.center,
+                    children: _snowflakes.map((snowflake) {
+                      return _DraggableSnowflake(
+                        key: ValueKey(snowflake.id),
+                        snowflakeId: snowflake.id,
+                        isInCircle: snowflake.isInCircle,
+                      );
+                    }).toList(),
                   ),
                   const SizedBox(height: 24),
 
@@ -268,5 +292,241 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
     );
   }
+}
+
+// Snowflake Position Class
+class _SnowflakePosition {
+  int id;
+  Offset offset;
+  bool isInCircle;
+
+  _SnowflakePosition({
+    required this.id,
+    required this.offset,
+    this.isInCircle = false,
+  });
+}
+
+// Snowman Circle Widget with Drop Zone
+class _SnowmanCircle extends StatelessWidget {
+  final int snowflakesInCircle;
+  final Function(int) onSnowflakeDropped;
+
+  const _SnowmanCircle({
+    required this.snowflakesInCircle,
+    required this.onSnowflakeDropped,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final snowmanOpacity = (snowflakesInCircle / 5.0).clamp(0.0, 1.0);
+    
+    return DragTarget<int>(
+      onWillAccept: (data) => data != null,
+      onAccept: (snowflakeId) {
+        onSnowflakeDropped(snowflakeId);
+      },
+      builder: (context, candidateData, rejectedData) {
+        return Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: [
+                Theme.of(context).colorScheme.primary,
+                Theme.of(context).colorScheme.primary.withOpacity(0.7),
+              ],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: candidateData.isNotEmpty
+                    ? Colors.green.withOpacity(0.5)
+                    : Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                blurRadius: 20,
+                spreadRadius: 5,
+              ),
+            ],
+          ),
+          child: CircleAvatar(
+            radius: 60,
+            backgroundColor: Colors.white,
+            child: Opacity(
+              opacity: snowmanOpacity,
+              child: CustomPaint(
+                size: const Size(120, 120),
+                painter: _SnowmanPainter(),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// Snowman Painter
+class _SnowmanPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..style = PaintingStyle.fill;
+    
+    final centerX = size.width / 2;
+    final bottomY = size.height - 10;
+    
+    // Bottom circle (body)
+    paint.color = Colors.white;
+    canvas.drawCircle(
+      Offset(centerX, bottomY - 30),
+      35,
+      paint,
+    );
+    
+    // Middle circle
+    canvas.drawCircle(
+      Offset(centerX, bottomY - 75),
+      28,
+      paint,
+    );
+    
+    // Top circle (head)
+    canvas.drawCircle(
+      Offset(centerX, bottomY - 110),
+      22,
+      paint,
+    );
+    
+    // Eyes
+    paint.color = Colors.black;
+    canvas.drawCircle(Offset(centerX - 8, bottomY - 115), 3, paint);
+    canvas.drawCircle(Offset(centerX + 8, bottomY - 115), 3, paint);
+    
+    // Nose (carrot)
+    paint.color = Colors.orange;
+    final nosePath = Path();
+    nosePath.moveTo(centerX, bottomY - 110);
+    nosePath.lineTo(centerX + 8, bottomY - 105);
+    nosePath.lineTo(centerX, bottomY - 103);
+    nosePath.close();
+    canvas.drawPath(nosePath, paint);
+    
+    // Mouth (buttons)
+    paint.color = Colors.black;
+    canvas.drawCircle(Offset(centerX, bottomY - 70), 2, paint);
+    canvas.drawCircle(Offset(centerX, bottomY - 55), 2, paint);
+    
+    // Hat
+    paint.color = Colors.black;
+    canvas.drawRect(
+      Rect.fromLTWH(centerX - 20, bottomY - 135, 40, 8),
+      paint,
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(centerX - 15, bottomY - 145, 30, 10),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_SnowmanPainter oldDelegate) => false;
+}
+
+// Draggable Snowflake Widget
+class _DraggableSnowflake extends StatelessWidget {
+  final int snowflakeId;
+  final bool isInCircle;
+
+  const _DraggableSnowflake({
+    super.key,
+    required this.snowflakeId,
+    required this.isInCircle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isInCircle) {
+      // If already in circle, hide it
+      return const SizedBox.shrink();
+    }
+
+    return Draggable<int>(
+      data: snowflakeId,
+      feedback: Material(
+        color: Colors.transparent,
+        child: Transform.scale(
+          scale: 1.2,
+          child: CustomPaint(
+            size: const Size(50, 50),
+            painter: _SnowflakeIconPainter(),
+          ),
+        ),
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.3,
+        child: CustomPaint(
+          size: const Size(50, 50),
+          painter: _SnowflakeIconPainter(),
+        ),
+      ),
+      child: CustomPaint(
+        size: const Size(50, 50),
+        painter: _SnowflakeIconPainter(),
+      ),
+    );
+  }
+}
+
+// Snowflake Icon Painter
+class _SnowflakeIconPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF87CEEB)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width * 0.4;
+
+    // Draw 6-pointed snowflake
+    for (int i = 0; i < 6; i++) {
+      final angle = (i * 60 - 90) * math.pi / 180;
+      
+      // Main arm
+      final endX = center.dx + radius * math.cos(angle);
+      final endY = center.dy + radius * math.sin(angle);
+      canvas.drawLine(center, Offset(endX, endY), paint);
+      
+      // Side branches
+      final branchLength = radius * 0.3;
+      final branchAngle1 = angle + math.pi / 3;
+      final branchAngle2 = angle - math.pi / 3;
+      
+      final branchStartX = center.dx + radius * 0.6 * math.cos(angle);
+      final branchStartY = center.dy + radius * 0.6 * math.sin(angle);
+      
+      final branch1EndX = branchStartX + branchLength * math.cos(branchAngle1);
+      final branch1EndY = branchStartY + branchLength * math.sin(branchAngle1);
+      canvas.drawLine(
+        Offset(branchStartX, branchStartY),
+        Offset(branch1EndX, branch1EndY),
+        paint,
+      );
+      
+      final branch2EndX = branchStartX + branchLength * math.cos(branchAngle2);
+      final branch2EndY = branchStartY + branchLength * math.sin(branchAngle2);
+      canvas.drawLine(
+        Offset(branchStartX, branchStartY),
+        Offset(branch2EndX, branch2EndY),
+        paint,
+      );
+    }
+    
+    // Center circle
+    paint.style = PaintingStyle.fill;
+    canvas.drawCircle(center, size.width * 0.1, paint);
+  }
+
+  @override
+  bool shouldRepaint(_SnowflakeIconPainter oldDelegate) => false;
 }
 
