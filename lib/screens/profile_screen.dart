@@ -140,7 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   
                   // Instruction text
                   Text(
-                    '5 цасны хэлбэрийг дугуй руу чирж тавина уу',
+                    '5 цасан ширхэгийг дугуй руу чирж тавина уу',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[600],
                         ),
@@ -368,66 +368,64 @@ class _SnowmanCircle extends StatelessWidget {
 class _SnowmanPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..style = PaintingStyle.fill;
-    
+    final fillPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..color = Colors.white;
+
+    final strokePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..color = Colors.black
+      ..strokeWidth = 2;
+
     final centerX = size.width / 2;
     final bottomY = size.height - 10;
-    
-    // Bottom circle (body)
-    paint.color = Colors.white;
-    canvas.drawCircle(
-      Offset(centerX, bottomY - 30),
-      35,
-      paint,
-    );
-    
+
+    // Bottom circle
+    final bottomCircle = Offset(centerX, bottomY - 30);
+    canvas.drawCircle(bottomCircle, 35, fillPaint);
+    canvas.drawCircle(bottomCircle, 35, strokePaint);
+
     // Middle circle
-    canvas.drawCircle(
-      Offset(centerX, bottomY - 75),
-      28,
-      paint,
-    );
-    
-    // Top circle (head)
-    canvas.drawCircle(
-      Offset(centerX, bottomY - 110),
-      22,
-      paint,
-    );
-    
+    final middleCircle = Offset(centerX, bottomY - 75);
+    canvas.drawCircle(middleCircle, 28, fillPaint);
+    canvas.drawCircle(middleCircle, 28, strokePaint);
+
+    // Top circle
+    final topCircle = Offset(centerX, bottomY - 110);
+    canvas.drawCircle(topCircle, 22, fillPaint);
+    canvas.drawCircle(topCircle, 22, strokePaint);
+
     // Eyes
-    paint.color = Colors.black;
-    canvas.drawCircle(Offset(centerX - 8, bottomY - 115), 3, paint);
-    canvas.drawCircle(Offset(centerX + 8, bottomY - 115), 3, paint);
-    
-    // Nose (carrot)
-    paint.color = Colors.orange;
-    final nosePath = Path();
-    nosePath.moveTo(centerX, bottomY - 110);
-    nosePath.lineTo(centerX + 8, bottomY - 105);
-    nosePath.lineTo(centerX, bottomY - 103);
-    nosePath.close();
-    canvas.drawPath(nosePath, paint);
-    
-    // Mouth (buttons)
-    paint.color = Colors.black;
-    canvas.drawCircle(Offset(centerX, bottomY - 70), 2, paint);
-    canvas.drawCircle(Offset(centerX, bottomY - 55), 2, paint);
-    
+    final eyePaint = Paint()..color = Colors.black;
+    canvas.drawCircle(Offset(centerX - 8, bottomY - 115), 3, eyePaint);
+    canvas.drawCircle(Offset(centerX + 8, bottomY - 115), 3, eyePaint);
+
+    // Nose
+    final nosePaint = Paint()..color = Colors.orange;
+    final nosePath = Path()
+      ..moveTo(centerX, bottomY - 110)
+      ..lineTo(centerX + 10, bottomY - 106)
+      ..lineTo(centerX, bottomY - 103)
+      ..close();
+    canvas.drawPath(nosePath, nosePaint);
+
+    // Buttons
+    canvas.drawCircle(Offset(centerX, bottomY - 70), 2, eyePaint);
+    canvas.drawCircle(Offset(centerX, bottomY - 55), 2, eyePaint);
+
     // Hat
-    paint.color = Colors.black;
     canvas.drawRect(
       Rect.fromLTWH(centerX - 20, bottomY - 135, 40, 8),
-      paint,
+      eyePaint,
     );
     canvas.drawRect(
       Rect.fromLTWH(centerX - 15, bottomY - 145, 30, 10),
-      paint,
+      eyePaint,
     );
   }
 
   @override
-  bool shouldRepaint(_SnowmanPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 // Draggable Snowflake Widget
