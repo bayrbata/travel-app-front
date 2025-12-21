@@ -368,61 +368,96 @@ class _SnowmanCircle extends StatelessWidget {
 class _SnowmanPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..style = PaintingStyle.fill;
+    final fillPaint = Paint()..style = PaintingStyle.fill;
+    final strokePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0
+      ..color = Colors.grey[400]!;
     
     final centerX = size.width / 2;
     final bottomY = size.height - 10;
     
     // Bottom circle (body)
-    paint.color = Colors.white;
+    fillPaint.color = Colors.white;
     canvas.drawCircle(
       Offset(centerX, bottomY - 30),
       35,
-      paint,
+      fillPaint,
+    );
+    canvas.drawCircle(
+      Offset(centerX, bottomY - 30),
+      35,
+      strokePaint,
     );
     
     // Middle circle
     canvas.drawCircle(
       Offset(centerX, bottomY - 75),
       28,
-      paint,
+      fillPaint,
+    );
+    canvas.drawCircle(
+      Offset(centerX, bottomY - 75),
+      28,
+      strokePaint,
     );
     
     // Top circle (head)
     canvas.drawCircle(
       Offset(centerX, bottomY - 110),
       22,
-      paint,
+      fillPaint,
+    );
+    canvas.drawCircle(
+      Offset(centerX, bottomY - 110),
+      22,
+      strokePaint,
     );
     
     // Eyes
-    paint.color = Colors.black;
-    canvas.drawCircle(Offset(centerX - 8, bottomY - 115), 3, paint);
-    canvas.drawCircle(Offset(centerX + 8, bottomY - 115), 3, paint);
+    fillPaint.color = Colors.black;
+    canvas.drawCircle(Offset(centerX - 8, bottomY - 115), 3, fillPaint);
+    canvas.drawCircle(Offset(centerX + 8, bottomY - 115), 3, fillPaint);
     
     // Nose (carrot)
-    paint.color = Colors.orange;
+    fillPaint.color = Colors.orange;
     final nosePath = Path();
     nosePath.moveTo(centerX, bottomY - 110);
     nosePath.lineTo(centerX + 8, bottomY - 105);
     nosePath.lineTo(centerX, bottomY - 103);
     nosePath.close();
-    canvas.drawPath(nosePath, paint);
+    canvas.drawPath(nosePath, fillPaint);
     
-    // Mouth (buttons)
-    paint.color = Colors.black;
-    canvas.drawCircle(Offset(centerX, bottomY - 70), 2, paint);
-    canvas.drawCircle(Offset(centerX, bottomY - 55), 2, paint);
+    // Mouth (smile)
+    strokePaint.color = Colors.black;
+    strokePaint.style = PaintingStyle.stroke;
+    strokePaint.strokeWidth = 2.0;
+    final smilePath = Path();
+    smilePath.addArc(
+      Rect.fromCenter(
+        center: Offset(centerX, bottomY - 108),
+        width: 16,
+        height: 8,
+      ),
+      0,
+      math.pi,
+    );
+    canvas.drawPath(smilePath, strokePaint);
+    
+    // Buttons
+    fillPaint.color = Colors.black;
+    canvas.drawCircle(Offset(centerX, bottomY - 70), 2, fillPaint);
+    canvas.drawCircle(Offset(centerX, bottomY - 55), 2, fillPaint);
     
     // Hat
-    paint.color = Colors.black;
+    fillPaint.color = Colors.black;
     canvas.drawRect(
       Rect.fromLTWH(centerX - 20, bottomY - 135, 40, 8),
-      paint,
+      fillPaint,
     );
     canvas.drawRect(
       Rect.fromLTWH(centerX - 15, bottomY - 145, 30, 10),
-      paint,
+      fillPaint,
     );
   }
 
