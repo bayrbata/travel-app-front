@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:travelapp/models/travel_model.dart';
 import 'package:travelapp/services/api_service.dart';
+import 'package:travelapp/services/favorites_service.dart';
 import 'package:travelapp/screens/travel_detail_screen.dart';
 import 'package:travelapp/screens/add_edit_travel_screen.dart';
 import 'package:travelapp/utils/image_utils.dart';
@@ -20,11 +21,22 @@ class HomeScreenState extends State<HomeScreen> {
   String _order = 'DESC';
   String _searchQuery = '';
   bool _isLoading = false;
+  int _selectedTab = 0; // 0 = All, 1 = Favorites
+  final FavoritesService _favoritesService = FavoritesService();
+  Set<int> _favoriteIds = {};
 
   @override
   void initState() {
     super.initState();
     futureTravels = _fetchTravels();
+    _loadFavorites();
+  }
+
+  Future<void> _loadFavorites() async {
+    final favorites = await _favoritesService.getFavoriteIds();
+    setState(() {
+      _favoriteIds = favorites;
+    });
   }
 
   @override
@@ -79,6 +91,20 @@ class HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  Future<void> _toggleFavorite(int travelId) async {
+    await _favoritesService.toggleFavorite(travelId);
+    await _loadFavorites();
+    setState(() {}); // Refresh UI
+  }
+
+  List<Travel> _filterTravels(List<Travel> travels) {
+    if (_selectedTab == 1) {
+      // Show only favorites
+      return travels.where((travel) => _favoriteIds.contains(travel.id)).toList();
+    }
+    return travels;
+  }
+
   void _navigateToDetail(Travel travel) async {
     final result = await Navigator.push(
       context,
@@ -86,8 +112,14 @@ class HomeScreenState extends State<HomeScreen> {
         pageBuilder: (context, animation, secondaryAnimation) =>
             TravelDetailScreen(
           travel: travel,
-          onTravelUpdated: _refreshTravels,
-          onTravelDeleted: _refreshTravels,
+          onTravelUpdated: () {
+            _refreshTravels();
+            _loadFavorites();
+          },
+          onTravelDeleted: () {
+            _refreshTravels();
+            _loadFavorites();
+          },
         ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           const begin = Offset(1.0, 0.0);
@@ -158,6 +190,42 @@ class HomeScreenState extends State<HomeScreen> {
         children: [
           Column(
         children: [
+          // Tab Bar
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _TabButton(
+                    label: 'Бүгд',
+                    icon: Icons.grid_view,
+                    isSelected: _selectedTab == 0,
+                    onTap: () {
+                      setState(() {
+                        _selectedTab = 0;
+                      });
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: _TabButton(
+                    label: 'Дуртай',
+                    icon: Icons.favorite,
+                    isSelected: _selectedTab == 1,
+                    onTap: () {
+                      setState(() {
+                        _selectedTab = 1;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
           // Search and Sort Bar
           Padding(
             padding: const EdgeInsets.all(8.0),
@@ -285,22 +353,32 @@ class HomeScreenState extends State<HomeScreen> {
                   );
                 }
 
-                final travels = snapshot.data ?? [];
+                final allTravels = snapshot.data ?? [];
+                final travels = _filterTravels(allTravels);
 
                 if (travels.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.travel_explore, size: 64, color: Colors.grey),
-                        const SizedBox(height: 16),
-                        const Text('Аяллын зураг олдсонгүй'),
-                        const SizedBox(height: 16),
-                        ElevatedButton.icon(
-                          onPressed: _navigateToAdd,
-                          icon: const Icon(Icons.add),
-                          label: const Text('Шинэ аялал нэмэх'),
+                        Icon(
+                          _selectedTab == 1 ? Icons.favorite_border : Icons.travel_explore,
+                          size: 64,
+                          color: Colors.grey,
                         ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _selectedTab == 1
+                              ? 'Дуртай аяллын зураг байхгүй байна'
+                              : 'Аяллын зураг олдсонгүй',
+                        ),
+                        const SizedBox(height: 16),
+                        if (_selectedTab == 0)
+                          ElevatedButton.icon(
+                            onPressed: _navigateToAdd,
+                            icon: const Icon(Icons.add),
+                            label: const Text('Шинэ аялал нэмэх'),
+                          ),
                       ],
                     ),
                   );
@@ -319,10 +397,13 @@ class HomeScreenState extends State<HomeScreen> {
                     itemCount: travels.length,
                     itemBuilder: (context, index) {
                       final travel = travels[index];
+                      final isFavorite = _favoriteIds.contains(travel.id);
                       return _AnimatedTravelCard(
                         travel: travel,
                         index: index,
+                        isFavorite: isFavorite,
                         onTap: () => _navigateToDetail(travel),
+                        onFavoriteToggle: () => _toggleFavorite(travel.id),
                       );
                     },
                   ),
@@ -543,16 +624,71 @@ class SnowflakePainter extends CustomPainter {
   }
 }
 
+// Tab Button Widget
+class _TabButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _TabButton({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        margin: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? Theme.of(context).primaryColor
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: isSelected ? Colors.white : Colors.grey[600],
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.grey[700],
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // Staggered Animation Widget
 class _AnimatedTravelCard extends StatefulWidget {
   final Travel travel;
   final int index;
+  final bool isFavorite;
   final VoidCallback onTap;
+  final VoidCallback onFavoriteToggle;
 
   const _AnimatedTravelCard({
     required this.travel,
     required this.index,
+    this.isFavorite = false,
     required this.onTap,
+    required this.onFavoriteToggle,
   });
 
   @override
@@ -646,38 +782,72 @@ class _AnimatedTravelCardState extends State<_AnimatedTravelCard>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Image
+                      // Image with Favorite Button
                       Expanded(
-                        child: ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(12),
-                          ),
-                          child: widget.travel.image != null &&
-                                  widget.travel.image!.isNotEmpty
-                              ? Image.memory(
-                                  ImageUtils.decodeBase64Image(
-                                      widget.travel.image!)!,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
+                        child: Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(12),
+                              ),
+                              child: widget.travel.image != null &&
+                                      widget.travel.image!.isNotEmpty
+                                  ? Image.memory(
+                                      ImageUtils.decodeBase64Image(
+                                          widget.travel.image!)!,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Container(
+                                          color: Colors.grey[300],
+                                          child: const Icon(
+                                            Icons.image,
+                                            size: 50,
+                                            color: Colors.grey,
+                                          ),
+                                        );
+                                      },
+                                    )
+                                  : Container(
                                       color: Colors.grey[300],
                                       child: const Icon(
                                         Icons.image,
                                         size: 50,
                                         color: Colors.grey,
                                       ),
-                                    );
+                                    ),
+                            ),
+                            // Favorite Button
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () {
+                                    widget.onFavoriteToggle();
                                   },
-                                )
-                              : Container(
-                                  color: Colors.grey[300],
-                                  child: const Icon(
-                                    Icons.image,
-                                    size: 50,
-                                    color: Colors.grey,
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.9),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      widget.isFavorite
+                                          ? Icons.favorite
+                                          : Icons.favorite_border,
+                                      color: widget.isFavorite
+                                          ? Colors.red
+                                          : Colors.grey[600],
+                                      size: 20,
+                                    ),
                                   ),
                                 ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       // Title and location
