@@ -401,12 +401,12 @@ class _SnowflakeAnimationState extends State<_SnowflakeAnimation>
 }
 
 class Snowflake {
-  double x;
-  double y;
-  double size;
-  double speed;
-  double opacity;
-  double drift;
+  late double x;
+  late double y;
+  late double size;
+  late double speed;
+  late double opacity;
+  late double drift;
   final math.Random _random;
 
   Snowflake(this._random) {
