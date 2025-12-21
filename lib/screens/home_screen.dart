@@ -21,7 +21,6 @@ class HomeScreenState extends State<HomeScreen> {
   String _order = 'DESC';
   String _searchQuery = '';
   bool _isLoading = false;
-  int _selectedTab = 0; // 0 = All, 1 = Favorites
   final FavoritesService _favoritesService = FavoritesService();
   Set<int> _favoriteIds = {};
 
@@ -98,10 +97,6 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   List<Travel> _filterTravels(List<Travel> travels) {
-    if (_selectedTab == 1) {
-      // Show only favorites
-      return travels.where((travel) => _favoriteIds.contains(travel.id)).toList();
-    }
     return travels;
   }
 
@@ -176,59 +171,72 @@ class HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Travel Gallery'),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).colorScheme.primary,
+                    Theme.of(context).colorScheme.primary.withOpacity(0.7),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.travel_explore,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Travel Gallery',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+              ),
+            ),
+          ],
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: _navigateToAdd,
-            tooltip: 'Шинэ аялал нэмэх',
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.add, color: Colors.white),
+              onPressed: _navigateToAdd,
+              tooltip: 'Шинэ аялал нэмэх',
+            ),
           ),
         ],
+        automaticallyImplyLeading: false,
       ),
       body: Stack(
         children: [
           Column(
         children: [
-          // Tab Bar
+          // Search and Sort Bar
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+            padding: const EdgeInsets.all(16.0),
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _TabButton(
-                    label: 'Бүгд',
-                    icon: Icons.grid_view,
-                    isSelected: _selectedTab == 0,
-                    onTap: () {
-                      setState(() {
-                        _selectedTab = 0;
-                      });
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: _TabButton(
-                    label: 'Дуртай',
-                    icon: Icons.favorite,
-                    isSelected: _selectedTab == 1,
-                    onTap: () {
-                      setState(() {
-                        _selectedTab = 1;
-                      });
-                    },
-                  ),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
-          ),
-          // Search and Sort Bar
-          Padding(
-            padding: const EdgeInsets.all(8.0),
             child: Column(
               children: [
                 TextField(
@@ -245,78 +253,110 @@ class HomeScreenState extends State<HomeScreen> {
                             },
                           )
                         : null,
+                    filled: true,
+                    fillColor: Colors.grey[50],
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
                   ),
                   onChanged: _onSearchChanged,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: _sortBy,
-                        decoration: const InputDecoration(
-                          labelText: 'Эрэмбэлэх',
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'created_at',
-                            child: Text('Огноо'),
+                        child: DropdownButtonFormField<String>(
+                          value: _sortBy,
+                          decoration: const InputDecoration(
+                            labelText: 'Эрэмбэлэх',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 8,
+                            ),
                           ),
-                          DropdownMenuItem(
-                            value: 'travel_date',
-                            child: Text('Аяллын огноо'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'title',
-                            child: Text('Гарчиг'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'location',
-                            child: Text('Байршил'),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          if (value != null) {
-                            _onSortChanged(value, null);
-                          }
-                        },
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'created_at',
+                              child: Text('Огноо'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'travel_date',
+                              child: Text('Аяллын огноо'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'title',
+                              child: Text('Гарчиг'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'location',
+                              child: Text('Байршил'),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            if (value != null) {
+                              _onSortChanged(value, null);
+                            }
+                          },
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                     Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: _order,
-                        decoration: const InputDecoration(
-                          labelText: 'Дараалал',
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'ASC',
-                            child: Text('Өсөх'),
+                        child: DropdownButtonFormField<String>(
+                          value: _order,
+                          decoration: const InputDecoration(
+                            labelText: 'Дараалал',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 8,
+                            ),
                           ),
-                          DropdownMenuItem(
-                            value: 'DESC',
-                            child: Text('Буурах'),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          if (value != null) {
-                            _onSortChanged(null, value);
-                          }
-                        },
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'ASC',
+                              child: Text('Өсөх'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'DESC',
+                              child: Text('Буурах'),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            if (value != null) {
+                              _onSortChanged(null, value);
+                            }
+                          },
+                        ),
                       ),
                     ),
                   ],
@@ -362,23 +402,18 @@ class HomeScreenState extends State<HomeScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          _selectedTab == 1 ? Icons.favorite_border : Icons.travel_explore,
+                          Icons.travel_explore,
                           size: 64,
                           color: Colors.grey,
                         ),
                         const SizedBox(height: 16),
-                        Text(
-                          _selectedTab == 1
-                              ? 'Дуртай аяллын зураг байхгүй байна'
-                              : 'Аяллын зураг олдсонгүй',
-                        ),
+                        const Text('Аяллын зураг олдсонгүй'),
                         const SizedBox(height: 16),
-                        if (_selectedTab == 0)
-                          ElevatedButton.icon(
-                            onPressed: _navigateToAdd,
-                            icon: const Icon(Icons.add),
-                            label: const Text('Шинэ аялал нэмэх'),
-                          ),
+                        ElevatedButton.icon(
+                          onPressed: _navigateToAdd,
+                          icon: const Icon(Icons.add),
+                          label: const Text('Шинэ аялал нэмэх'),
+                        ),
                       ],
                     ),
                   );
@@ -387,12 +422,12 @@ class HomeScreenState extends State<HomeScreen> {
                 return RefreshIndicator(
                   onRefresh: _refreshTravels,
                   child: GridView.builder(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(16),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                      childAspectRatio: 0.88,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 0.85,
                     ),
                     itemCount: travels.length,
                     itemBuilder: (context, index) {
@@ -419,9 +454,11 @@ class HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: _navigateToAdd,
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('Шинэ аялал'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
     );
   }
@@ -624,57 +661,6 @@ class SnowflakePainter extends CustomPainter {
   }
 }
 
-// Tab Button Widget
-class _TabButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _TabButton({
-    required this.label,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        margin: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? Theme.of(context).primaryColor
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: isSelected ? Colors.white : Colors.grey[600],
-            ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.grey[700],
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 // Staggered Animation Widget
 class _AnimatedTravelCard extends StatefulWidget {
   final Travel travel;
@@ -773,23 +759,33 @@ class _AnimatedTravelCardState extends State<_AnimatedTravelCard>
               child: InkWell(
                 onTap: widget.onTap,
                 borderRadius: BorderRadius.circular(12),
-                child: Card(
-                  elevation: 4,
-                  margin: EdgeInsets.zero,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  child: Column(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Card(
+                      elevation: 0,
+                      margin: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Image with Favorite Button
                       Expanded(
                         child: Stack(
                           children: [
-                            ClipRRect(
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(12),
-                              ),
+                            Positioned.fill(
                               child: widget.travel.image != null &&
                                       widget.travel.image!.isNotEmpty
                                   ? Image.memory(
@@ -819,8 +815,8 @@ class _AnimatedTravelCardState extends State<_AnimatedTravelCard>
                             ),
                             // Favorite Button
                             Positioned(
-                              top: 8,
-                              right: 8,
+                              top: 12,
+                              right: 12,
                               child: Material(
                                 color: Colors.transparent,
                                 child: InkWell(
@@ -829,10 +825,17 @@ class _AnimatedTravelCardState extends State<_AnimatedTravelCard>
                                   },
                                   borderRadius: BorderRadius.circular(20),
                                   child: Container(
-                                    padding: const EdgeInsets.all(6),
+                                    padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.9),
+                                      color: Colors.white,
                                       shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.2),
+                                          blurRadius: 8,
+                                          spreadRadius: 1,
+                                        ),
+                                      ],
                                     ),
                                     child: Icon(
                                       widget.isFavorite
@@ -851,10 +854,10 @@ class _AnimatedTravelCardState extends State<_AnimatedTravelCard>
                         ),
                       ),
                       // Title and location
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6.0,
-                          vertical: 4.0,
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -864,23 +867,23 @@ class _AnimatedTravelCardState extends State<_AnimatedTravelCard>
                               widget.travel.title,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 12,
+                                fontSize: 14,
                               ),
-                              maxLines: 1,
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: 6),
                             Row(
                               children: [
-                                const Icon(Icons.location_on,
-                                    size: 11, color: Colors.grey),
-                                const SizedBox(width: 2),
+                                Icon(Icons.location_on,
+                                    size: 14, color: Colors.grey[600]),
+                                const SizedBox(width: 4),
                                 Expanded(
                                   child: Text(
                                     widget.travel.location,
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.grey,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -890,32 +893,53 @@ class _AnimatedTravelCardState extends State<_AnimatedTravelCard>
                             ),
                             if (widget.travel.country != null ||
                                 widget.travel.city != null) ...[
-                              const SizedBox(height: 2),
+                              const SizedBox(height: 6),
                               Wrap(
-                                spacing: 2,
-                                runSpacing: 1,
+                                spacing: 4,
+                                runSpacing: 4,
                                 children: [
                                   if (widget.travel.country != null)
-                                    Chip(
-                                      label: Text(
-                                        widget.travel.country!,
-                                        style: const TextStyle(fontSize: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
                                       ),
-                                      padding: const EdgeInsets.symmetric(horizontal: 3),
-                                      materialTapTargetSize:
-                                          MaterialTapTargetSize.shrinkWrap,
-                                      visualDensity: VisualDensity.compact,
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary
+                                            .withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        widget.travel.country!,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
                                     ),
                                   if (widget.travel.city != null)
-                                    Chip(
-                                      label: Text(
-                                        widget.travel.city!,
-                                        style: const TextStyle(fontSize: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
                                       ),
-                                      padding: const EdgeInsets.symmetric(horizontal: 3),
-                                      materialTapTargetSize:
-                                          MaterialTapTargetSize.shrinkWrap,
-                                      visualDensity: VisualDensity.compact,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[200],
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        widget.travel.city!,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.grey[700],
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
                                     ),
                                 ],
                               ),
@@ -924,6 +948,8 @@ class _AnimatedTravelCardState extends State<_AnimatedTravelCard>
                         ),
                       ),
                     ],
+                  ),
+                    ),
                   ),
                 ),
               ),

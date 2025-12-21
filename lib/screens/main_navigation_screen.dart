@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:travelapp/screens/home_screen.dart';
+import 'package:travelapp/screens/favorites_screen.dart';
 import 'package:travelapp/screens/profile_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -14,6 +15,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
+    const FavoritesScreen(),
     const ProfileScreen(),
   ];
 
@@ -24,24 +26,83 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         index: _currentIndex,
         children: _screens,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Нүүр',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          child: BottomNavigationBar(
+            currentIndex: _currentIndex,
+            onTap: (index) {
+              setState(() {
+                _currentIndex = index;
+              });
+            },
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            selectedItemColor: Theme.of(context).colorScheme.primary,
+            unselectedItemColor: Colors.grey[600],
+            selectedFontSize: 12,
+            unselectedFontSize: 12,
+            elevation: 8,
+            items: [
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.home_rounded),
+                activeIcon: Icon(Icons.home),
+                label: 'Нүүр',
+              ),
+              BottomNavigationBarItem(
+                icon: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.grey[200],
+                  ),
+                  child: const Icon(
+                    Icons.favorite_border,
+                    size: 20,
+                  ),
+                ),
+                activeIcon: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.red[400]!,
+                        Colors.pink[300]!,
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.withOpacity(0.4),
+                        blurRadius: 8,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.favorite,
+                    size: 20,
+                    color: Colors.white,
+                  ),
+                ),
+                label: 'Дуртай',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.person_outline_rounded),
+                activeIcon: Icon(Icons.person_rounded),
+                label: 'Профайл',
+              ),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Профайл',
-          ),
-        ],
-        type: BottomNavigationBarType.fixed,
+        ),
       ),
     );
   }

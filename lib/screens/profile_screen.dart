@@ -61,8 +61,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Профайл'),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).colorScheme.primary,
+                    Theme.of(context).colorScheme.primary.withOpacity(0.7),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.person,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Профайл',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+              ),
+            ),
+          ],
+        ),
         automaticallyImplyLeading: false,
       ),
       body: _isLoading
@@ -74,15 +105,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   // Профайлын зураг
                   Center(
-                    child: CircleAvatar(
-                      radius: 60,
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      child: Text(
-                        (_userInfo['username']?.substring(0, 1).toUpperCase() ?? 'U'),
-                        style: const TextStyle(
-                          fontSize: 48,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            Theme.of(context).colorScheme.primary,
+                            Theme.of(context).colorScheme.primary.withOpacity(0.7),
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                            blurRadius: 20,
+                            spreadRadius: 5,
+                          ),
+                        ],
+                      ),
+                      child: CircleAvatar(
+                        radius: 60,
+                        backgroundColor: Colors.white,
+                        child: Text(
+                          (_userInfo['username']?.substring(0, 1).toUpperCase() ?? 'U'),
+                          style: TextStyle(
+                            fontSize: 48,
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -110,44 +160,106 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 48),
 
                   // Мэдээлэл картууд
-                  Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.person),
-                      title: const Text('Нэвтрэх нэр'),
-                      subtitle: Text(_userInfo['username'] ?? '-'),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.email),
-                      title: const Text('Имэйл'),
-                      subtitle: Text(_userInfo['email'] ?? '-'),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.badge),
-                      title: const Text('Хэрэглэгчийн ID'),
-                      subtitle: Text(_userInfo['id'] ?? '-'),
+                    child: Column(
+                      children: [
+                        ListTile(
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.person,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                          title: const Text('Нэвтрэх нэр'),
+                          subtitle: Text(
+                            _userInfo['username'] ?? '-',
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.email,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                          title: const Text('Имэйл'),
+                          subtitle: Text(
+                            _userInfo['email'] ?? '-',
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.badge,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                          title: const Text('Хэрэглэгчийн ID'),
+                          subtitle: Text(
+                            _userInfo['id'] ?? '-',
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 48),
 
+                  const SizedBox(height: 24),
                   // Гарах товч
-                  ElevatedButton.icon(
-                    onPressed: _handleLogout,
-                    icon: const Icon(Icons.logout),
-                    label: const Text('Гарах'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.red.withOpacity(0.3),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton.icon(
+                      onPressed: _handleLogout,
+                      icon: const Icon(Icons.logout),
+                      label: const Text('Гарах'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
                       ),
                     ),
                   ),
