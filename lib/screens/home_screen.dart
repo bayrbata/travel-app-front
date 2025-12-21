@@ -368,8 +368,8 @@ class _SnowflakeAnimationState extends State<_SnowflakeAnimation>
       duration: const Duration(seconds: 1),
     )..repeat();
 
-    // Create snowflakes
-    for (int i = 0; i < 50; i++) {
+    // Create fewer but larger snowflakes
+    for (int i = 0; i < 25; i++) {
       _snowflakes.add(Snowflake(_random));
     }
   }
@@ -412,9 +412,9 @@ class Snowflake {
   Snowflake(this._random) {
     x = _random.nextDouble() * 100;
     y = _random.nextDouble() * -100; // Start above screen
-    size = 4 + _random.nextDouble() * 6;
+    size = 12 + _random.nextDouble() * 18; // Larger snowflakes (12-30)
     speed = 0.3 + _random.nextDouble() * 0.5;
-    opacity = 0.5 + _random.nextDouble() * 0.5;
+    opacity = 0.6 + _random.nextDouble() * 0.4;
     drift = -0.5 + _random.nextDouble();
   }
 
@@ -448,7 +448,8 @@ class SnowflakePainter extends CustomPainter {
       final x = (snowflake.x / 100) * size.width;
       final y = snowflake.y;
 
-      paint.color = Colors.white.withOpacity(snowflake.opacity);
+      // Use light blue color like in the image
+      paint.color = const Color(0xFF87CEEB).withOpacity(snowflake.opacity);
       
       // Draw snowflake (simple 6-pointed star)
       _drawSnowflake(canvas, Offset(x, y), snowflake.size, paint);
@@ -456,26 +457,84 @@ class SnowflakePainter extends CustomPainter {
   }
 
   void _drawSnowflake(Canvas canvas, Offset center, double size, Paint paint) {
-    final path = Path();
+    // Draw detailed 6-pointed snowflake with branches
+    final radius = size * 0.5;
     
-    // Draw 6-pointed snowflake
+    // Main 6 arms
     for (int i = 0; i < 6; i++) {
-      final angle = (i * 60) * math.pi / 180;
-      final x1 = center.dx + size * 0.5 * math.cos(angle);
-      final y1 = center.dy + size * 0.5 * math.sin(angle);
-      final x2 = center.dx + size * math.cos(angle);
-      final y2 = center.dy + size * math.sin(angle);
+      final angle = (i * 60 - 90) * math.pi / 180; // Start from top
       
-      path.moveTo(center.dx, center.dy);
-      path.lineTo(x1, y1);
-      path.moveTo(center.dx, center.dy);
-      path.lineTo(x2, y2);
+      // Main arm
+      final endX = center.dx + radius * math.cos(angle);
+      final endY = center.dy + radius * math.sin(angle);
+      
+      // Draw main arm
+      paint.style = PaintingStyle.stroke;
+      paint.strokeWidth = 2.0;
+      canvas.drawLine(center, Offset(endX, endY), paint);
+      
+      // Draw side branches on each arm
+      final branchLength = radius * 0.3;
+      final branchAngle1 = angle + math.pi / 3; // 60 degrees
+      final branchAngle2 = angle - math.pi / 3; // -60 degrees
+      
+      final branchStartX = center.dx + radius * 0.6 * math.cos(angle);
+      final branchStartY = center.dy + radius * 0.6 * math.sin(angle);
+      
+      // First side branch
+      final branch1EndX = branchStartX + branchLength * math.cos(branchAngle1);
+      final branch1EndY = branchStartY + branchLength * math.sin(branchAngle1);
+      canvas.drawLine(
+        Offset(branchStartX, branchStartY),
+        Offset(branch1EndX, branch1EndY),
+        paint,
+      );
+      
+      // Second side branch
+      final branch2EndX = branchStartX + branchLength * math.cos(branchAngle2);
+      final branch2EndY = branchStartY + branchLength * math.sin(branchAngle2);
+      canvas.drawLine(
+        Offset(branchStartX, branchStartY),
+        Offset(branch2EndX, branch2EndY),
+        paint,
+      );
+      
+      // Small branches at the end of main arm
+      final smallBranchLength = radius * 0.15;
+      final smallBranch1EndX = endX + smallBranchLength * math.cos(branchAngle1);
+      final smallBranch1EndY = endY + smallBranchLength * math.sin(branchAngle1);
+      final smallBranch2EndX = endX + smallBranchLength * math.cos(branchAngle2);
+      final smallBranch2EndY = endY + smallBranchLength * math.sin(branchAngle2);
+      
+      canvas.drawLine(
+        Offset(endX, endY),
+        Offset(smallBranch1EndX, smallBranch1EndY),
+        paint,
+      );
+      canvas.drawLine(
+        Offset(endX, endY),
+        Offset(smallBranch2EndX, smallBranch2EndY),
+        paint,
+      );
     }
     
-    canvas.drawPath(path, paint);
+    // Draw center hexagon
+    paint.style = PaintingStyle.fill;
+    final centerRadius = size * 0.15;
+    canvas.drawCircle(center, centerRadius, paint);
     
-    // Draw center circle
-    canvas.drawCircle(center, size * 0.3, paint);
+    // Draw small decorative circles at branch intersections
+    paint.style = PaintingStyle.fill;
+    for (int i = 0; i < 6; i++) {
+      final angle = (i * 60 - 90) * math.pi / 180;
+      final decorationX = center.dx + radius * 0.6 * math.cos(angle);
+      final decorationY = center.dy + radius * 0.6 * math.sin(angle);
+      canvas.drawCircle(
+        Offset(decorationX, decorationY),
+        size * 0.08,
+        paint,
+      );
+    }
   }
 
   @override
