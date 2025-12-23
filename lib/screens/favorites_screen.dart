@@ -16,10 +16,11 @@ class FavoritesScreen extends StatefulWidget {
 }
 
 class FavoritesScreenState extends State<FavoritesScreen> {
-
   final FavoritesService _favoritesService = FavoritesService();
   late Future<List<Travel>> _futureTravels;
   Set<int> _favoriteIds = {};
+  int _currentPage = 0;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -70,8 +71,7 @@ class FavoritesScreenState extends State<FavoritesScreen> {
               return Center(child: Text('Алдаа: ${snapshot.error}'));
             }
 
-            final favorites =
-                _favoriteOnly(snapshot.data ?? []);
+            final favorites = _favoriteOnly(snapshot.data ?? []);
 
             if (favorites.isEmpty) {
               return const Center(
@@ -82,23 +82,72 @@ class FavoritesScreenState extends State<FavoritesScreen> {
               );
             }
 
-            return GridView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: favorites.length,
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 0.85,
-              ),
-              itemBuilder: (context, index) {
-                return _FavoriteCard(
-                  travel: favorites[index],
-                  favoritesService: _favoritesService,
-                  onFavoriteChanged: _loadData,
-                );
-              },
+            return Column(
+              children: [
+                const SizedBox(height: 20),
+                // PageView with travel cards
+                Expanded(
+                  child: Stack(
+                    children: [
+                      PageView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: favorites.length,
+                        onPageChanged: (index) async {
+                          setState(() => _isLoading = true);
+                          await Future.delayed(const Duration(milliseconds: 300));
+                          setState(() {
+                            _currentPage = index;
+                            _isLoading = false;
+                          });
+                        },
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            child: _FavoriteCard(
+                              travel: favorites[index],
+                              favoritesService: _favoritesService,
+                              onFavoriteChanged: _loadData,
+                            ),
+                          );
+                        },
+                      ),
+                      // Loading overlay
+                      if (_isLoading)
+                        Center(
+                          child: Container(
+                            color: Colors.black45,
+                            child: const CircularProgressIndicator(),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                // Page indicator
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    favorites.length,
+                    (index) => AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 10,
+                      ),
+                      width: _currentPage == index ? 20 : 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: _currentPage == index
+                            ? Colors.deepPurple
+                            : Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             );
           },
         ),
@@ -128,79 +177,123 @@ class _FavoriteCard extends StatelessWidget {
       builder: (context, snapshot) {
         final isFavorite = snapshot.data ?? false;
 
-        return InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => TravelDetailScreen(travel: travel),
-              ),
-            );
-          },
-          child: ClipRRect(
+        return Card(
+          elevation: 6,
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            child: Stack(
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => TravelDetailScreen(travel: travel),
+                ),
+              );
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 /// 🖼 IMAGE
-                Positioned.fill(
-                  child: travel.image != null && travel.image!.isNotEmpty
-                      ? Image.memory(
-                          ImageUtils.decodeBase64Image(travel.image!)!,
-                          fit: BoxFit.cover,
-                        )
-                      : Container(color: Colors.grey[300]),
-                ),
-
-                /// ❤️ FAVORITE ICON
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: GestureDetector(
-                    onTap: () async {
-                      // Toggle favorite without causing full refresh
-                      await favoritesService.toggleFavorite(travel.id);
-                      // Only reload data to update the list
-                      onFavoriteChanged();
-                    },
-                    child: CircleAvatar(
-                      backgroundColor: Colors.white,
-                      child: Icon(
-                        isFavorite
-                            ? Icons.favorite
-                            : Icons.favorite_border,
-                        color: Colors.red,
-                      ),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(20),
+                    ),
+                    child: Stack(
+                      children: [
+                        travel.image != null && travel.image!.isNotEmpty
+                            ? Image.memory(
+                                ImageUtils.decodeBase64Image(travel.image!)!,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                              )
+                            : Container(
+                                color: Colors.grey[300],
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.image,
+                                    size: 64,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ),
+                        /// ❤️ FAVORITE ICON
+                        Positioned(
+                          top: 12,
+                          right: 12,
+                          child: GestureDetector(
+                            onTap: () async {
+                              // Toggle favorite without causing full refresh
+                              await favoritesService.toggleFavorite(travel.id);
+                              // Only reload data to update the list
+                              onFavoriteChanged();
+                            },
+                            child: CircleAvatar(
+                              backgroundColor: Colors.white,
+                              child: Icon(
+                                isFavorite
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                color: Colors.red,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-
-                /// 🌫 TITLE GRADIENT
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.7),
-                        ],
+                /// 📝 TITLE & DESCRIPTION
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SelectableText(
+                        travel.title,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      travel.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                      if (travel.description != null &&
+                          travel.description!.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        SelectableText(
+                          travel.description!,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.black87,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                      if (travel.location.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.location_on,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: SelectableText(
+                                travel.location,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ],
