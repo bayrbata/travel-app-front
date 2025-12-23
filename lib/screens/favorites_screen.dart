@@ -12,10 +12,11 @@ class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
 
   @override
-  State<FavoritesScreen> createState() => _FavoritesScreenState();
+  FavoritesScreenState createState() => FavoritesScreenState();
 }
 
-class _FavoritesScreenState extends State<FavoritesScreen> {
+class FavoritesScreenState extends State<FavoritesScreen> {
+
   final FavoritesService _favoritesService = FavoritesService();
   late Future<List<Travel>> _futureTravels;
   Set<int> _favoriteIds = {};
@@ -36,7 +37,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     });
   }
 
-  Future<void> _refreshData() async {
+  Future<void> refreshData() async {
     await _loadData();
   }
 
@@ -57,7 +58,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ),
       ),
       body: RefreshIndicator(
-        onRefresh: _refreshData,
+        onRefresh: refreshData,
         child: FutureBuilder<List<Travel>>(
           future: _futureTravels,
           builder: (context, snapshot) {
