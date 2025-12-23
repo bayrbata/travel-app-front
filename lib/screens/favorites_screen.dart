@@ -27,10 +27,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   Future<void> _loadData() async {
+    // Load favorites first
     final favorites = await _favoritesService.getFavoriteIds();
-    _favoriteIds = favorites;
-    _futureTravels = ApiService().fetchTravels();
-    setState(() {});
+    setState(() {
+      _favoriteIds = favorites;
+      // Only refresh travels if needed, don't reset favorites
+      _futureTravels = ApiService().fetchTravels();
+    });
   }
 
   Future<void> _refreshData() async {
@@ -154,8 +157,9 @@ class _FavoriteCard extends StatelessWidget {
                   right: 12,
                   child: GestureDetector(
                     onTap: () async {
-                      await favoritesService
-                          .toggleFavorite(travel.id);
+                      // Toggle favorite without causing full refresh
+                      await favoritesService.toggleFavorite(travel.id);
+                      // Only reload data to update the list
                       onFavoriteChanged();
                     },
                     child: CircleAvatar(

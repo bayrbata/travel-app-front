@@ -70,6 +70,9 @@ class HomeScreenState extends State<HomeScreen> {
     
     await futureTravels;
     
+    // Reload favorites to ensure they're in sync
+    await _loadFavorites();
+    
     if (mounted) {
       setState(() => _isLoading = false);
     }
@@ -79,6 +82,7 @@ class HomeScreenState extends State<HomeScreen> {
     setState(() {
       _searchQuery = value;
       futureTravels = _fetchTravels();
+      // Don't reload favorites - they should persist
     });
   }
 
@@ -87,6 +91,7 @@ class HomeScreenState extends State<HomeScreen> {
     if (order != null) _order = order;
     setState(() {
       futureTravels = _fetchTravels();
+      // Don't reload favorites - they should persist
     });
   }
 
@@ -101,7 +106,21 @@ class HomeScreenState extends State<HomeScreen> {
     });
     
     // Then save to SharedPreferences in background
-    await _favoritesService.toggleFavorite(travelId);
+    // Don't refresh travels list - only update favorites state
+    try {
+      await _favoritesService.toggleFavorite(travelId);
+    } catch (e) {
+      // If save fails, revert the optimistic update
+      if (mounted) {
+        setState(() {
+          if (_favoriteIds.contains(travelId)) {
+            _favoriteIds.remove(travelId);
+          } else {
+            _favoriteIds.add(travelId);
+          }
+        });
+      }
+    }
   }
 
   List<Travel> _filterTravels(List<Travel> travels) {
