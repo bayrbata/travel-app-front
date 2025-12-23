@@ -91,9 +91,17 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _toggleFavorite(int travelId) async {
+    // Optimistically update UI immediately
+    setState(() {
+      if (_favoriteIds.contains(travelId)) {
+        _favoriteIds.remove(travelId);
+      } else {
+        _favoriteIds.add(travelId);
+      }
+    });
+    
+    // Then save to SharedPreferences in background
     await _favoritesService.toggleFavorite(travelId);
-    await _loadFavorites();
-    setState(() {}); // Refresh UI
   }
 
   List<Travel> _filterTravels(List<Travel> travels) {
