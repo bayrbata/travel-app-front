@@ -747,6 +747,15 @@ class _AnimatedTravelCardState extends State<_AnimatedTravelCard>
   }
 
   @override
+  void didUpdateWidget(_AnimatedTravelCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If favorite status changed, rebuild to show updated icon
+    if (oldWidget.isFavorite != widget.isFavorite) {
+      setState(() {});
+    }
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();
@@ -825,35 +834,31 @@ class _AnimatedTravelCardState extends State<_AnimatedTravelCard>
                             Positioned(
                               top: 12,
                               right: 12,
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: () {
-                                    widget.onFavoriteToggle();
-                                  },
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.2),
-                                          blurRadius: 8,
-                                          spreadRadius: 1,
-                                        ),
-                                      ],
-                                    ),
-                                    child: Icon(
-                                      widget.isFavorite
-                                          ? Icons.favorite
-                                          : Icons.favorite_border,
-                                      color: widget.isFavorite
-                                          ? Colors.red
-                                          : Colors.grey[600],
-                                      size: 20,
-                                    ),
+                              child: GestureDetector(
+                                onTap: () {
+                                  widget.onFavoriteToggle();
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.2),
+                                        blurRadius: 8,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Icon(
+                                    widget.isFavorite
+                                        ? Icons.favorite
+                                        : Icons.favorite_border,
+                                    color: widget.isFavorite
+                                        ? Colors.red
+                                        : Colors.grey[600],
+                                    size: 20,
                                   ),
                                 ),
                               ),

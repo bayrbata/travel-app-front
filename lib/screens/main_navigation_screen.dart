@@ -12,10 +12,11 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
+  final GlobalKey<FavoritesScreenState> _favoritesKey = GlobalKey<FavoritesScreenState>();
 
-  final List<Widget> _screens = [
+  List<Widget> get _screens => [
     const HomeScreen(),
-    const FavoritesScreen(),
+    FavoritesScreen(key: _favoritesKey),
     const ProfileScreen(),
   ];
 
@@ -42,6 +43,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             onTap: (index) {
               setState(() {
                 _currentIndex = index;
+                // Refresh favorites screen when tab is selected
+                if (index == 1 && _favoritesKey.currentState != null) {
+                  _favoritesKey.currentState!.refresh();
+                }
               });
             },
             type: BottomNavigationBarType.fixed,
