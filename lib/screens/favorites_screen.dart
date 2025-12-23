@@ -158,9 +158,6 @@ class _FavoriteCard extends StatelessWidget {
           MaterialPageRoute(
             builder: (_) => TravelDetailScreen(
               travel: travel,
-              onFavoriteToggle: () {
-                favoritesService.toggleFavorite(travel.id);
-              },
             ),
           ),
         );
